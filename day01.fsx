@@ -11,10 +11,11 @@ let calories =
 // Part one
 calories
     |> Array.max
+    |> printfn "Part one: %A"
 
 // Part two
 calories
     |> Array.sortDescending
     |> Array.take 3
     |> Array.sum
-
+    |> printfn "Part two: %A"
