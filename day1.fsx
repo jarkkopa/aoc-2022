@@ -1,8 +1,8 @@
 # time
 
-let inputStr = "inputs/day01.txt" |> System.IO.File.ReadAllText
+let input = "inputs/day01.txt" |> System.IO.File.ReadAllText
 
-inputStr.Split("\n\n")
+input.Split("\n\n")
     |> Array.map (fun x -> x.Split("\n"))
     |> Array.map (Array.map int) 
     |> Array.map Array.sum
