@@ -8,12 +8,10 @@ let calories =
     |> Array.map (Array.map int)
     |> Array.map Array.sum
 
-// Part one
 calories
     |> Array.max
     |> printfn "Part one: %A"
 
-// Part two
 calories
     |> Array.sortDescending
     |> Array.take 3
