@@ -50,11 +50,14 @@ let roundResult round =
     | [|_; b|] -> (Lose,b)
     | _ -> failwith "unknown shape"
 
+let totalPoints (result, ownShape) =
+    roundPoints result + handPoints ownShape
+
 "inputs/day02.txt" 
     |> System.IO.File.ReadAllLines
     |> Array.map (fun x -> x.Split(" "))
     |> Array.map ((fun x -> Array.map shape x) >> roundResult)
-    |> Array.map (fun (result, ownShape) -> roundPoints result + handPoints ownShape)
+    |> Array.map totalPoints
     |> Array.sum
     |> printfn "Part one: %A"
 
@@ -63,6 +66,6 @@ let roundResult round =
     |> Array.map (fun x -> x.Split(" "))
     |> Array.map (fun x -> (shape x.[0], ownShape (shape x.[0]) (desiredResult x.[1])))
     |> Array.map (fun (elf,own) -> roundResult [|elf;own|])
-    |> Array.map (fun (result, ownShape) -> roundPoints result + handPoints ownShape)
+    |> Array.map totalPoints
     |> Array.sum
     |> printfn "Part two: %A"
