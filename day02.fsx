@@ -9,6 +9,26 @@ let shape x =
     | "B" | "Y" -> Paper
     | _ -> Scissors
 
+let desiredResult x =
+    match x with
+    | "X" -> Lose
+    | "Y" -> Draw
+    | _ -> Win
+
+let ownShape elfShape desiredResult =
+    match (elfShape, desiredResult) with
+    | (a, Draw) -> a
+    | (a, Win) -> 
+        match a with
+        | Rock -> Paper
+        | Paper -> Scissors
+        | _ -> Rock
+    | (a, Lose) ->
+        match a with
+        | Rock -> Scissors
+        | Paper -> Rock
+        | _ -> Paper
+
 let handPoints shape =
     match shape with
     | Rock -> 1
@@ -32,10 +52,17 @@ let roundResult round =
 
 "inputs/day02.txt" 
     |> System.IO.File.ReadAllLines
-    |> Array.map (fun x -> x.Split(" ") )
-    |> Array.map (fun x -> Array.map shape x)
-    |> Array.map roundResult
+    |> Array.map (fun x -> x.Split(" "))
+    |> Array.map ((fun x -> Array.map shape x) >> roundResult)
     |> Array.map (fun (result, ownShape) -> roundPoints result + handPoints ownShape)
     |> Array.sum
     |> printfn "Part one: %A"
-    
+
+"inputs/day02.txt" 
+    |> System.IO.File.ReadAllLines
+    |> Array.map (fun x -> x.Split(" "))
+    |> Array.map (fun x -> (shape x.[0], ownShape (shape x.[0]) (desiredResult x.[1])))
+    |> Array.map (fun (elf,own) -> roundResult [|elf;own|])
+    |> Array.map (fun (result, ownShape) -> roundPoints result + handPoints ownShape)
+    |> Array.sum
+    |> printfn "Part two: %A"
