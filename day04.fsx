@@ -16,8 +16,8 @@ let findFullOverlaps (sections: Set<int>[]) =
 
 let ranges =
     "inputs/day04.txt"
-        |> System.IO.File.ReadAllLines
-        |> Array.map (split "," >> Array.map (parseRange >> rangeToSections))
+    |> System.IO.File.ReadAllLines
+    |> Array.map (split "," >> Array.map (parseRange >> rangeToSections))
 
 ranges
     |> Array.map findFullOverlaps
