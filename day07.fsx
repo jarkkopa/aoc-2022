@@ -33,7 +33,8 @@ let moveDirectory (currentPath: Path) directory =
 
 let moveBack (currentPath: Path) =
     let lastDirectoryIdx = currentPath.LastIndexOf("/")
-    if lastDirectoryIdx = 0 then "/"
+    if lastDirectoryIdx = 0
+    then "/"
     else currentPath.Substring(0, lastDirectoryIdx)
 
 let processCommand (state: Path * FileSystemEntry list) (command: string[])=
@@ -75,7 +76,7 @@ let rec runCommands (state: Path * FileSystemEntry list) (commands: (InputLine *
         runCommands newFileSystem tail
     | _ -> state
 
-let sizeByDirectory (fileSystem: FileSystemEntry list) =
+let toDirectorySizes (fileSystem: FileSystemEntry list) =
     let directories =
         fileSystem
         |> List.filter (fun x -> x.Type = Directory)
@@ -87,12 +88,26 @@ let sizeByDirectory (fileSystem: FileSystemEntry list) =
             file.FullPath.Contains d.FullPath 
         )
         |> List.sumBy (fun x -> x.Size)
+        //|> List.map (fun x -> (x.F))
     )
 
-input
+let directorySizes = 
+    input
     |> runCommands ("", [{FullPath="/"; Size=0; Type=Directory}])
     |> snd
-    |> sizeByDirectory
+    |> toDirectorySizes
+
+directorySizes
     |> List.filter (fun x -> x <= 100000)
     |> List.sum
     |> printfn "Part one: %A"
+
+let usedSpace = List.head directorySizes
+let totalDiskSize = 70000000
+let spaceNeeded = 30000000
+
+directorySizes
+    |> List.filter (fun size -> totalDiskSize - usedSpace + size >= spaceNeeded)
+    |> List.sort
+    |> List.head
+    |> printfn "Part two: %A"
