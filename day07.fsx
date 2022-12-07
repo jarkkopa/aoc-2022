@@ -3,14 +3,15 @@
 type InputLine = Command | Output
 type Path = string
 type FileSystemEntryType = File | Directory
-type FileSystemEntry = {FullPath:string; Size:int; Type:FileSystemEntryType}
+type FileSystemEntry = {FullPath: string; Size: int; Type: FileSystemEntryType}
+type State = Path * FileSystemEntry list
 
-let parseCommand (line:string) =
+let parseCommand (line: string) =
     line
     |> fun x -> x.Substring(2)
     |> fun x -> x.Split(" ")
 
-let parseOutput (line:string) =
+let parseOutput (line: string) =
     line
     |> fun x -> x.Split(" ")
 
@@ -37,7 +38,7 @@ let moveBack (currentPath: Path) =
     then "/"
     else currentPath.Substring(0, lastDirectoryIdx)
 
-let processCommand (state: Path * FileSystemEntry list) (command: string[])=
+let processCommand (state: State) (command: string[])=
     let commandPart = command.[0]
     let path = fst state
     let fileSystem = snd state
@@ -51,7 +52,7 @@ let processCommand (state: Path * FileSystemEntry list) (command: string[])=
         | directory -> (moveDirectory path directory, fileSystem)
     | _ -> failwith "Unknown command"
 
-let processOutput (state: Path * FileSystemEntry list) (output: string[]) =
+let processOutput (state: State) (output: string[]) =
     let firstPart = output.[0]
     let path = fst state
     let fileSystem = snd state
@@ -64,12 +65,12 @@ let processOutput (state: Path * FileSystemEntry list) (output: string[]) =
         let newFileSytem = List.append fileSystem [{FullPath=(moveDirectory path output.[1]); Size=(size |> int); Type=File}]
         (path, newFileSytem)
 
-let processInput (state: Path * FileSystemEntry list) (processableInput: (InputLine * string[])) = 
+let processInput (state: State) (processableInput: (InputLine * string[])) = 
     match processableInput with
     | ( Command, _) -> processCommand state (snd processableInput)
     | _ -> processOutput state (snd processableInput)
 
-let rec runCommands (state: Path * FileSystemEntry list) (commands: (InputLine * string[]) list)= 
+let rec runCommands (state: State) (commands: (InputLine * string[]) list)= 
     match commands with
     | head::tail -> 
         let newFileSystem = processInput state head
@@ -82,13 +83,12 @@ let toDirectorySizes (fileSystem: FileSystemEntry list) =
         |> List.filter (fun x -> x.Type = Directory)
     
     directories
-    |> List.map (fun d ->
+    |> List.map (fun dir ->
         fileSystem
         |> List.filter (fun file ->
-            file.FullPath.Contains d.FullPath 
+            file.FullPath.Contains dir.FullPath 
         )
         |> List.sumBy (fun x -> x.Size)
-        //|> List.map (fun x -> (x.F))
     )
 
 let directorySizes = 

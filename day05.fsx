@@ -56,7 +56,7 @@ let rec step moveMethod (crates: char[][]) (instructions: int list list)  =
         step moveMethod newCrates tail
     | _ -> crates
 
-let rearrange moveMethod (crates,instructions:int[][]) =
+let rearrange moveMethod (crates, instructions:int[][]) =
     instructions
     |> Array.map Array.toList
     |> Array.toList
