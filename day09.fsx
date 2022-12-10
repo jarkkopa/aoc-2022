@@ -4,7 +4,10 @@ type Coordinate = {X: int; Y: int}
 type Knot = {Position: Coordinate; Visited: Coordinate Set}
 type Direction = L | R | U | D
 type Move = {Dir: Direction; Amount: int}
-type HeadTail = Knot*Knot
+
+let startPos = {X = 0; Y = 0}
+let head = { Position = startPos; Visited = Set.empty.Add(startPos)}
+let tail = { Position = startPos; Visited = Set.empty.Add(startPos)}
 
 let parseMove (line: string):Move =
     line.Split(" ")
@@ -48,30 +51,37 @@ let moveTail (headPos: Coordinate) (tail: Knot) =
         |_ -> failwith "Can't move tail"
     {tail with Position = newPos; Visited = tail.Visited.Add(newPos)}
 
-let moveBoth (((head, tail), move): HeadTail * Move) cur =
-    let (newHead, newMove) = moveByOne (head, move )
+let moveBoth ((knots, move): Knot list * Move) cur =
+    let head = knots |> List.head
+    let tail = knots |> List.tail
+    let (newHead, newMove) = moveByOne (head, move)
 
-    let newTail = 
-        if isTouching newHead.Position tail.Position
-        then tail
-        else moveTail newHead.Position tail
+    let moveRest ((acc, headKnotPos): Knot list * Coordinate) (curKnot: Knot) =
+        let newKnot = 
+            if isTouching headKnotPos curKnot.Position
+            then curKnot
+            else moveTail headKnotPos curKnot
+        ([newKnot] @ acc, newKnot.Position)
 
-    ((newHead, newTail), newMove)
+    let newKnots =
+        tail
+        |> List.fold moveRest ([], newHead.Position)
+        |> fst
 
-let move ((head, tail): HeadTail) move =
+    ([newHead] @ newKnots, newMove)
+
+let move (knots: Knot list) move =
     [|1..move.Amount|]
-    |> Array.fold moveBoth ((head, tail), move)
+    |> Array.fold moveBoth (knots, move)
     |> fst
 
-let startPos = {X = 0; Y = 0}
-let knotH = { Position = startPos; Visited = Set.empty.Add(startPos)}
-let knotT = { Position = startPos; Visited = Set.empty.Add(startPos)}
+let knots = [head; tail]
 
 "inputs/day09.txt"
     |> System.IO.File.ReadAllLines
     |> Array.map parseMove
-    |> Array.fold move ((knotH, knotT))
-    |> snd
+    |> Array.fold move knots
+    |> List.last
     |> fun x -> x.Visited
     |> Set.toList
     |> List.length
