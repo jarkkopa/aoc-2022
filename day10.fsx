@@ -20,7 +20,17 @@ let parseOp (line: string): Op =
     | "noop" -> {Command = Noop; Cycles = 1; Param = 0}
     | _ -> {Command = Addx; Cycles = 2; Param = op.[1] |> int }
 
-let runCycle ((signals, cycles, x): int list * int * Register) (cur: int) =
+let printPixel (cycles: int) (x: Register) =
+    let pos = cycles % 40
+    let char = 
+        if pos >= x - 1 && pos <= x + 1
+        then "#"
+        else "."
+    if cycles % 40 = 39
+    then printfn "%s" char
+    else printf "%s" char
+
+let runCycle ((signals, cycles, x): int list * int * Register) cur =
     let newCycles = cycles + 1
     let newSignals = 
         if newCycles % 40 = 20
@@ -28,6 +38,9 @@ let runCycle ((signals, cycles, x): int list * int * Register) (cur: int) =
             let newSignal = x * newCycles
             signals @ [newSignal]
         else signals
+
+    printPixel cycles x |> ignore
+
     (newSignals, newCycles, x)
 
 let runOperation (cpu: CpuState) (op: Op) =
