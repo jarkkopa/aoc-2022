@@ -5,10 +5,6 @@ type Knot = {Position: Coordinate; Visited: Coordinate Set}
 type Direction = L | R | U | D
 type Move = {Dir: Direction; Amount: int}
 
-let startPos = {X = 0; Y = 0}
-let head = { Position = startPos; Visited = Set.empty.Add(startPos)}
-let tail = { Position = startPos; Visited = Set.empty.Add(startPos)}
-
 let parseMove (line: string):Move =
     line.Split(" ")
     |> (fun s -> 
@@ -21,7 +17,7 @@ let parseMove (line: string):Move =
     )
 
 let isTouching (a: Coordinate) (b: Coordinate) =
-    a.X - b.X |> abs <=1 &&
+    a.X - b.X |> abs <= 1 &&
     a.Y - b.Y |> abs <= 1
 
 let updatePos (oldPos: Coordinate) (dir: Direction) (amount: int): Coordinate =
@@ -40,15 +36,12 @@ let moveTail (headPos: Coordinate) (tail: Knot) =
     let tailPos = tail.Position
     let newPos = 
         match (tailPos, headPos) with
-        | (t, h) when t.X = h.X->
+        | (t, h) when t.X = h.X ->
             {t with Y = h.Y + compare t.Y h.Y}
         | (t, h) when t.Y = h.Y ->
             {t with X = h.X + compare t.X h.X}
-        | (t, h) when abs (t.Y - h.Y) > 1 ->
-            {h with Y = h.Y + compare t.Y h.Y}
-        | (t, h) when abs (t.X - h.X) > 1 ->
-             {h with X = h.X + compare t.X h.X}
-        |_ -> failwith "Can't move tail"
+        | (t, h) -> 
+            {X = t.X + compare h.X t.X; Y = t.Y + compare h.Y t.Y}
     {tail with Position = newPos; Visited = tail.Visited.Add(newPos)}
 
 let moveBoth ((knots, move): Knot list * Move) cur =
@@ -61,7 +54,7 @@ let moveBoth ((knots, move): Knot list * Move) cur =
             if isTouching headKnotPos curKnot.Position
             then curKnot
             else moveTail headKnotPos curKnot
-        ([newKnot] @ acc, newKnot.Position)
+        (acc @ [newKnot], newKnot.Position)
 
     let newKnots =
         tail
@@ -75,14 +68,23 @@ let move (knots: Knot list) move =
     |> Array.fold moveBoth (knots, move)
     |> fst
 
-let knots = [head; tail]
+let startPos = {X = 0; Y = 0}
+let startKnot = {Position = startPos; Visited = Set.empty.Add(startPos)}
 
-"inputs/day09.txt"
+let countTailVisits length  =
+    let rope = List.replicate length startKnot
+
+    "inputs/day09.txt"
     |> System.IO.File.ReadAllLines
     |> Array.map parseMove
-    |> Array.fold move knots
+    |> Array.fold move rope
     |> List.last
     |> fun x -> x.Visited
     |> Set.toList
     |> List.length
+
+countTailVisits 2
     |> printfn "Part one: %A"
+
+countTailVisits 10
+    |> printfn "Part two: %A"
