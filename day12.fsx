@@ -41,9 +41,41 @@ let closestNeighbors (queue: Node array) (grid: Node[,]) (node: Node): Node list
     |> List.choose id
     |> List.filter (fun n -> queue |> Array.contains n)
 
-let updateInArray (arr: Node array) (updateNode: Node) =
-    let i = arr |> Array.findIndex (fun n -> n.Pos = updateNode.Pos)
-    arr |> Array.updateAt i updateNode
+let updateInArray (nodes: Node array) (updateNode: Node) =
+    let i = nodes |> Array.findIndex (fun n -> n.Pos = updateNode.Pos)
+    nodes |> Array.updateAt i updateNode
+
+let closestNode (nodes: Node array) =
+    nodes |> Array.sortBy (fun n -> n.Distance) |> Array.head
+
+let rec calculateDistances (grid, unvisited, nodes): Node[,] * Node array * Node array =
+    match unvisited with
+    | [||] -> 
+        (grid, unvisited, nodes)
+    | _ ->
+        let node = closestNode unvisited
+        let nodeIdx = unvisited |> Array.findIndex (fun n -> n.Pos = node.Pos)
+        let newQ = unvisited |> Array.removeAt nodeIdx
+
+        let neighbors = closestNeighbors unvisited grid node
+        let newNeighbors = 
+            neighbors
+            |> List.map (fun n -> 
+                let distance = node.Distance + 1
+                let newDistance = if canMoveTo node.Height n.Height && n.Distance > distance then distance else n.Distance
+                {n with Distance = newDistance}
+            )
+
+        let updatedPrev = 
+            newNeighbors
+            |> List.fold updateInArray nodes
+
+        let updatedQ = 
+            newNeighbors
+            |> List.fold updateInArray newQ
+
+        if node.Char = 'E' || node.Distance = MAX then (grid, updatedQ, updatedPrev)
+        else calculateDistances (grid, updatedQ, updatedPrev)
 
 let findShortestPaths (nodeFilter: Node -> bool) (graph: Node[,]) (startPos: Coordinate)=
     let unvisitedNodes = 
@@ -53,42 +85,8 @@ let findShortestPaths (nodeFilter: Node -> bool) (graph: Node[,]) (startPos: Coo
         |> Array.filter (fun n -> nodeFilter n || n.Pos = startPos)
         |> Array.map (fun n -> 
             {n with Distance = if n.Pos = startPos then 0 else MAX})
-
     let nodes = unvisitedNodes |> Array.copy
-
-    let closestNode (queue: Node array) =
-        queue |> Array.sortBy (fun n -> n.Distance) |> Array.head
-
-    let rec calculate (grid, unvisited, nodes): Node[,] * Node array * Node array =
-        match unvisited with
-        | [||] -> 
-            (grid, unvisited, nodes)
-        | _ ->
-            let node = closestNode unvisited
-            let nodeIdx = unvisited |> Array.findIndex (fun n -> n.Pos = node.Pos)
-            let newQ = unvisited |> Array.removeAt nodeIdx
-
-            let neighbors = closestNeighbors unvisited grid node
-            let newNeighbors = 
-                neighbors
-                |> List.map (fun n -> 
-                    let distance = node.Distance + 1
-                    let newDistance = if canMoveTo node.Height n.Height && n.Distance > distance then distance else n.Distance
-                    {n with Distance = newDistance}
-                )
-
-            let updatedPrev = 
-                newNeighbors
-                |> List.fold updateInArray nodes
-
-            let updatedQ = 
-                newNeighbors
-                |> List.fold updateInArray newQ
-
-            if node.Char = 'E' || node.Distance = MAX then (grid, updatedQ, updatedPrev)
-            else calculate (grid, updatedQ, updatedPrev)
-
-    calculate (graph, unvisitedNodes, nodes)
+    calculateDistances (graph, unvisitedNodes, nodes)
     |> (fun (_, _, p) -> p)
 
 let allNodes = 
@@ -114,4 +112,3 @@ allNodes
     |> Array.sort
     |> Array.head
     |> printfn "Part two: %A"
-    
