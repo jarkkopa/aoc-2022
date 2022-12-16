@@ -45,39 +45,46 @@ let walls =
     |> Array.scan addWall Map.empty
     |> Array.last
 
-let hasNodeBelow (nodes: NodeMap) ((x, y): Position) =
-    match nodes |> Map.tryFind x with
-    | Some xMap ->
-        xMap |> Map.keys |> Seq.filter (fun yVal -> yVal > y) |> Seq.isEmpty |> not
-    | None -> false
+let hasNodeBelow (floor: Y option) (nodes: NodeMap) ((x, y): Position) =
+    match floor with
+    | None -> 
+        match nodes |> Map.tryFind x with
+        | Some xMap -> 
+            xMap |> Map.keys |> Seq.filter (fun yVal -> yVal > y) |> Seq.isEmpty |> not
+        | None -> false
+    | Some maxY -> maxY >= y
 
-let nextFallPos (nodes: NodeMap) ((x, y): Position): Position option =
-    let hasNode ((nX, nY): Position) =
-        nodes |> Map.tryFind nX |> Option.defaultValue Map.empty |> Map.tryFind nY
+let nextFallPos (floor: Y option) (nodes: NodeMap) ((x, y): Position): Position option =
+    match floor with
+    | Some maxY when maxY <= y -> None
+    |_ ->
+        let hasNode ((nX, nY): Position) =
+            nodes |> Map.tryFind nX |> Option.defaultValue Map.empty |> Map.tryFind nY
 
-    [(x, y + 1); (x - 1, y + 1); (x + 1, y + 1)]
-    |> List.map (fun pos -> 
-        match hasNode pos with
-        | Some _ -> None
-        | _ -> Some(pos)
-    )
-    |> List.tryPick id
+        [(x, y + 1); (x - 1, y + 1); (x + 1, y + 1)]
+        |> List.map (fun pos -> 
+            match hasNode pos with
+            | Some _ -> None
+            | _ -> Some(pos)
+        )
+        |> List.tryPick id
 
-let rec pourSand (staticNodes: NodeMap) (from: Position) (node: Node) =
-    let nextFallPos = nextFallPos staticNodes from
+let rec pourSand (floor: Y option) (staticNodes: NodeMap) (from: Position) (node: Node) =
+    let nextFallPos = nextFallPos floor staticNodes from
     match nextFallPos with
     | Some nextPos ->
-        if hasNodeBelow staticNodes nextPos
-        then
-            pourSand staticNodes nextPos node
-        else
-            staticNodes
+        if hasNodeBelow floor staticNodes nextPos
+        then pourSand floor staticNodes nextPos node
+        else staticNodes
     | None ->
-        addNode staticNodes {node with Type = Sand} from
-        |> fun newStaticNodes -> 
-        pourSand newStaticNodes (500, 0) {Type = Sand} 
+            addNode staticNodes {node with Type = Sand} from
+            |> fun newStaticNodes -> 
+                match from with
+                | (500, 0) -> newStaticNodes
+                | _ -> pourSand floor newStaticNodes (500, 0) {Type = Sand} 
 
-pourSand walls (500, 0) {Type = Sand} 
+let numOfSandToFill floor walls =
+    pourSand floor walls (500, 0) {Type = Sand} 
     |> (fun nodes ->
         nodes.Values
         |> Seq.map (fun ymap -> 
@@ -89,4 +96,19 @@ pourSand walls (500, 0) {Type = Sand}
         |> Array.filter (fun x -> x.Type = Sand)
     )
     |> Array.length
+
+numOfSandToFill None walls
     |> printfn "Part one: %A"
+
+let floor =
+    walls
+    |> Map.values
+    |> Seq.map Map.keys 
+    |> Seq.collect id
+    |> Seq.sortByDescending id
+    |> Seq.head
+    |> (+) 1
+    |> Some
+
+numOfSandToFill floor walls
+    |> printfn "Part two: %A"
